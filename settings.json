@@ -1,0 +1,8 @@
+{
+    "results_path":"results",
+    "filenames":{
+        "minimax":"minimax.pk",
+        "state_index_3":"state_index_3.pk",
+        "tabular_q":"tabular_q.json"
+    }
+}
