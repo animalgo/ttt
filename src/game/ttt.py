@@ -33,7 +33,7 @@ class TTT:
             elif sum == 1:
                 mover = -1
             else:
-                raise 'invalid state'
+                raise BaseException(f'invalid state {state}')
         return mover
 
     def get_state(self):

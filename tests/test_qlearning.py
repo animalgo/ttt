@@ -1,6 +1,7 @@
 import unittest
 from src.agents.qlearning import TabularQ
 from src.agents.minimax import minimax_load
+from src.agents import load
 from src.game.ttt import TTT
 from src.utils.path import Settings
 import numpy as np
@@ -74,7 +75,8 @@ class ImplementationTest(unittest.TestCase):
 
     def test_deterministic_vs_minimax(self):
         # gamma, alpha == 1 guarantees that for endstates s and optimal move a,
-        # Q(s,a) = R(s,a) if Q is not 0
+        # Q(s,a) = R(s,a) IF Q(s,a) IS NOT 0
+        # Here, R(s,a) is the score of the terminated state
         parameters = {
             "ep_train":0.5,
             "ep_infer":0,
@@ -133,3 +135,56 @@ class ImplementationTest(unittest.TestCase):
                     self.assertEqual( best_score, q_value )
             pass
 
+    def test_as_first_mover(self):
+
+        parameters = {
+            "ep_train":0.5,
+            "ep_infer":0,
+            "gamma":1,
+            "alpha":1,
+            "agent_for":'maximizer',
+        }
+        q = TabularQ(3)
+        q.set_params(**parameters)
+        opponent_agent = load('minimax')
+        q.train(numOfGames=500,opponent_agent=opponent_agent)
+
+        t = TTT(3)
+
+        Q = q._Q
+        updated_state_indices = np.where(Q != [0,0,0,0,0,0,0,0,0])[0] # [0] for row indices
+        updated_state_indices = set(updated_state_indices)
+
+        for i in updated_state_indices:
+            state = q.get_state(i)
+            mover = t.get_mover(state=state)
+            self.assertEqual(mover,1)
+            
+        return
+
+    def test_as_second_mover(self):
+
+        parameters = {
+            "ep_train":0.5,
+            "ep_infer":0,
+            "gamma":1,
+            "alpha":1,
+            "agent_for":'minimizer',
+        }
+        q = TabularQ(3)
+        q.set_params(**parameters)
+        opponent_agent = load('minimax')
+        q.train(numOfGames=500,opponent_agent=opponent_agent)
+
+        t = TTT(3)
+
+        Q = q._Q
+        updated_state_indices = np.where(Q != [0,0,0,0,0,0,0,0,0])[0] # [0] for row indices
+        updated_state_indices = set(updated_state_indices)
+        
+        for i in updated_state_indices:
+            state = q.get_state(i)
+            mover = t.get_mover(state=state)
+            self.assertEqual(mover,-1)
+
+        return

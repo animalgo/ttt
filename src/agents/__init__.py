@@ -11,7 +11,7 @@ def load(name:str,params={})->Callable[[np.ndarray],int]:
         minimax = src.agents.minimax.minimax_load(s.path('minimax'))
         def agent(state:np.ndarray)->int:
             move = minimax(state)[1]
-            return move
+            return int(move)
         return agent
     else:
         raise NameError(f'{name} is not implemented')

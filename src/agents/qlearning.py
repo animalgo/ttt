@@ -149,7 +149,7 @@ class TabularQ:
             self._train_both(numOfGames)
         else :
             # assert opponent_agent(np.ndarray) == move inferred :
-            test_state = np.zeros(self._size * self._size)
+            test_state = np.zeros(self._size * self._size,dtype=int)
             assert type(opponent_agent(test_state)) is int
             if params['agent_for'] == 'maximizer':
                 self._is_first_mover = True
