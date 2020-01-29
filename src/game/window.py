@@ -26,7 +26,7 @@ class GameWindow(tk.Toplevel):
         buttons = self._buttons
         num_of_buttons = size*size
         for i in range(num_of_buttons):
-            b = tk.Button(board,width=8,height=4,
+            b = tk.Button(board,width=3,height=1,font=('Helvetica',30),
                         command=lambda num=i:self._on_click(num))
             buttons.append(b)
             b.grid(column=i%size,row=int(i/size))
@@ -37,9 +37,16 @@ class GameWindow(tk.Toplevel):
 
     def _on_click(self,position:int):
 
-        # TODO
-        # if last state, go on.
-        # else, remove later history
+        state_num = int(self._history_scale.get())
+        is_rewinded = not (self._num_of_moves == state_num)
+        if is_rewinded:
+            # reset the game to the rewinded one :
+            state_to_force = self._state_history[state_num]
+            self._t.set_state(state_to_force)
+            self._num_of_moves = self._t._num_moves
+            self._state_history = self._state_history[0:(self._num_of_moves+1)]
+            pass
+
         self._t.put(position)
         current_state = self._t.get_state()
         self._state_history.append(current_state)
@@ -77,7 +84,7 @@ class GameWindow(tk.Toplevel):
         self._history_scale = history_scale
 
         restart_button = tk.Button(frame,text="Restart")
-        exit_button = tk.Button(frame,text="Exit")
+        exit_button = tk.Button(frame,text="Exit",command=self.destroy)
         restart_button.grid(row=1,column=0)
         exit_button.grid(row=1,column=1)
 
@@ -86,13 +93,17 @@ class GameWindow(tk.Toplevel):
         return
 
     def _on_scale_move(self,state_num):
-        print(state_num)
+
         state_num = int(state_num)
+        self._rewind_to(state_num)
+        return
+
+    def _rewind_to(self,state_num:int):
+
         to_state = self._state_history[state_num]
         for p in range(len(to_state)):
             move = int(to_state[p])
             self._modify_button(p,move)
-
         return
 
     def put(self,position:int):
@@ -104,6 +115,5 @@ class GameWindow(tk.Toplevel):
         return self._t.get_result()
 
 if __name__ == '__main__':
-    mother_window = tk.Tk()
-    game_window = GameWindow(True)
-    mother_window.mainloop()
+    game_window = GameWindow(True,3)
+    tk.mainloop()
