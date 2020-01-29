@@ -8,7 +8,7 @@ class CompetingTest(unittest.TestCase):
 
     def test_minimax_vs_minimax(self):
         t3 = run_withdraw_game(3)
-        self.assertEqual(t3.check_winner(),0)
+        self.assertEqual(t3.check_winner()['winner'],0)
         pass
 
     def test_alphabeta_vs_alphabeta(self):
@@ -28,7 +28,7 @@ class CompetingTest(unittest.TestCase):
 
         print('final state')
         print(t)
-        self.assertEqual(t.check_winner(),0)
+        self.assertEqual(t.check_winner()['winner'],0)
 
     def test_alphabeta_vs_minimax(self):
         
@@ -52,7 +52,7 @@ class CompetingTest(unittest.TestCase):
 
         print('final state')
         print(t)
-        self.assertEqual(t.check_winner(),0)
+        self.assertEqual(t.check_winner()['winner'],0)
 
     def test_penalty_vs_penalty(self):
 

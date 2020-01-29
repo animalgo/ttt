@@ -12,7 +12,7 @@ class TTT:
         size = self._size
         state = self._state.reshape((size,size)).__str__()
         mover = self.get_mover()
-        winner = self.check_winner()
+        winner = self.check_winner()['winner']
         if winner == 0:
             state += f'\n mover : {mover}'
         else:
@@ -62,18 +62,26 @@ class TTT:
         self._num_moves += 1
         return None
 
-    def check_winner(self,state=None):
+    def check_winner(self,state=None)->dict:
         size = self._size
         if state is None:
             state = self._state
         
+        winner = 0
+        lines = []
+
         # check rows :
         for r in range(size):
             sum = np.sum(state[r*size:r*size+size])
             if sum == size:
-                return 1
+                winner = 1
+                line = list(range(r*size,r*size+size))
+                lines.append(line)
             elif sum == -size:
-                return -1
+                winner = -1
+                line = list(range(r*size,r*size+size))
+                lines.append(line)
+        
         # check columns :
         for c in range(size):
             sum = 0
@@ -81,25 +89,38 @@ class TTT:
                 sum = sum + state[c + r*size]
                 pass
             if sum == size:
-                return 1
+                winner = 1
+                line = list(range(c,size*size,size))
+                lines.append(line)
             elif sum == -size:
-                return -1
+                winner = -1
+                line = list(range(c,size*size,size))
+                lines.append(line)
+        
         # check diagonal :
         sum1 = 0
         sum2 = 0
+        line1 = []
+        line2 = []
         for r in range(size):
             sum1 += state[r + r*size] # : / shape
+            line1.append(r + r*size)
             sum2 += state[size-1-r + r*size] # : \ shape
+            line2.append(size-1-r + r*size)
         if sum1 == size:
-            return 1
+            winner = 1
+            lines.append(line1)
         elif sum1 == -size:
-            return -1
+            winner = -1
+            lines.append(line1)
         if sum2 == size:
-            return 1
+            winner = 1
+            lines.append(line2)
         elif sum2 == -size:
-            return -1
-        # not yet finished :
-        return 0
+            winner = -1
+            lines.append(line2)
+
+        return {'winner':winner,'lines':lines}
 
     def is_terminated(self,state=None):
         if state is None:
@@ -115,7 +136,7 @@ class TTT:
         elif num_moves < self._size*2 - 1:
             # not enough moves
             return False
-        elif self.check_winner(state) is not 0:
+        elif self.check_winner(state)['winner'] is not 0:
             return True
         else:
             return False
@@ -126,7 +147,7 @@ class TTT:
         else:
             state = self._state
             num_moves = self._num_moves
-        winner = self.check_winner(state)
+        winner = self.check_winner(state)['winner']
         
         if winner == 0:
             return 0
@@ -148,6 +169,8 @@ class TTT:
             num_moves = self._num_moves
 
         score = 0
+        winner = 0
+        lines = []
         if num_moves < self._size*2 - 1:
             # not enough moves
             terminated = False
@@ -155,17 +178,23 @@ class TTT:
         elif num_moves == self._size * self._size :
             # board full
             terminated = True
+            check = self.check_winner(state)
+            lines = check['lines']
+            winner = check['winner']
             # score is 0 or 1 or -1, which is same as winner value :
-            score = self.check_winner(state)
+            score = check['winner']
         else :
             score = self.get_score(state)
             if score == 0 :
                 terminated = False
             else :
                 terminated = True
+                check = self.check_winner(state)
+                winner = check['winner']
+                lines = check['lines']
             pass
 
-        return {'terminated':terminated, 'score':score}
+        return {'terminated':terminated, 'score':score, 'winner':winner, 'lines':lines}
 
     def set_state(self,state)->None:
 

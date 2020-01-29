@@ -8,13 +8,13 @@ class TestWinner(unittest.TestCase):
     def test_row(self):
         t3 = TTT(3)
         s3 = np.array([0,0,0,-1,-1,0, 1,1,1])
-        self.assertEqual(t3.check_winner(s3),1)
+        self.assertEqual(t3.check_winner(s3),{'winner':1, 'lines':[[6,7,8]]})
         self.assertTrue(t3.is_terminated(s3))
     
     def test_column(self):
         t4 = TTT(4)
         s4 = np.array([1,0,0,-1, 0,1,0,-1, 1,0,0,-1, 0,1,0,-1])
-        self.assertEqual(t4.check_winner(s4),-1)
+        self.assertEqual(t4.check_winner(s4),{'winner':-1,'lines':[[3,7,11,15]]})
         self.assertTrue(t4.is_terminated(s4))
 
 
@@ -22,23 +22,23 @@ class TestWinner(unittest.TestCase):
         t3 = TTT(3)
         s3 = np.array([1,0,-1, 0,1,-1, 0,0,1])
         self.assertTrue(t3.is_terminated(s3))
-        self.assertEqual(t3.check_winner(s3),1)
+        self.assertEqual(t3.check_winner(s3),{'winner':1,'lines':[[0,4,8]]})
 
         t4 = TTT(4)
         s4 = np.array([-1,0,0,1, 0,-1,0,1, 0,1,-1,0, 1,0,0,-1])
         self.assertTrue(t4.is_terminated(s4))
-        self.assertEqual(t4.check_winner(s4),-1)
+        self.assertEqual(t4.check_winner(s4),{'winner':-1,'lines':[[0,5,10,15]]})
 
     def test_diagonal2(self):
         t3 = TTT(3)
         s3 = np.array([1,0,-1, 1,-1,0, -1,1,0])
-        self.assertEqual(t3.check_winner(s3),-1)
+        self.assertEqual(t3.check_winner(s3),{'winner':-1,'lines':[[2,4,6]]})
         self.assertTrue(t3.is_terminated(s3))
 
         t4 = TTT(4)
         s4 = np.array([-1,0,0,1, -1,0,1,0, -1,1,0,0, 1,0,0,0])
         self.assertTrue(t4.is_terminated(s4))
-        self.assertEqual(t4.check_winner(s4),1)
+        self.assertEqual(t4.check_winner(s4),{'winner':1,'lines':[[3,6,9,12]]})
 
 class TestUtils(unittest.TestCase):
 
@@ -73,8 +73,8 @@ class TestUtils(unittest.TestCase):
         ]
         s = np.array(s).reshape(-1)
         result = t3.get_result(s)
-        
-        self.assertDictEqual(result, {'terminated':True,'score':1})
+        to_equal = {'terminated':True, 'score':1, 'winner':1, 'lines':[[0,4,8]]}
+        self.assertDictEqual(result, to_equal)
 
     def test_state_encode(self):
         t3 = TTT(3)
