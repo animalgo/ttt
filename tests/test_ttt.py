@@ -96,6 +96,20 @@ class TestUtils(unittest.TestCase):
         mover = t.get_mover(state=s)
         self.assertTrue(mover == 1)
 
+    def test_set_state(self):
+        t = TTT(3)
+        state = [1,0,0,1,1,0,-1,-1,0]
+        t.set_state(state)
+        mover = t.get_mover()
+        order = t._order
+        num_of_moves = t._num_moves
+        _state = np.array(state,dtype=int)
+        self.assertEqual(mover,-1)
+        self.assertEqual(order,False)
+        self.assertEqual(num_of_moves,5)
+        self.assertTrue(np.array_equal(_state,t._state))
+
+
 class TestFullGame(unittest.TestCase):
 
     def test_game1(self):

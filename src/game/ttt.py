@@ -166,3 +166,23 @@ class TTT:
             pass
 
         return {'terminated':terminated, 'score':score}
+
+    def set_state(self,state)->None:
+
+        assert len(state) == self._size * self._size
+        state = np.array(state,dtype=int)
+        
+        num_of_moves = 0
+        for m in state:
+            if m == 1 or m == -1:
+                num_of_moves += 1
+            elif m == 0:
+                continue
+            else:
+                raise ValueError
+        self._num_moves = num_of_moves
+        
+        mover = self.get_mover(state=state)
+        order = True if mover is 1 else False
+        self._order = order
+        self._state = state
