@@ -58,7 +58,8 @@ class TabularQ:
         return check_Q
 
     def set_params(self,alpha=1,gamma=1,ep_train=0.5,ep_infer=0.05,agent_for="both")->dict:
-        assert agent_for is 'both' or agent_for is 'maximizer' or agent_for is 'minimizer'
+        
+        assert agent_for == 'both' or agent_for == 'maximizer' or agent_for == 'minimizer'
         parameters = {
             "ep_train":ep_train,         # random sampling ratio
             "ep_infer":ep_infer,         # random inference ratio
