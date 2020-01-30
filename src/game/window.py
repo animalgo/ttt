@@ -8,12 +8,12 @@ class GameWindow(tk.Toplevel):
         super().__init__(*args,**kwargs)
         
         self._user_first = user_first
-        
-        self._num_of_moves = 0
-        self._state_history = [[0]*size*size]
-        self._history_scale:tk.Scale
 
         self._t = TTT(size)
+
+        self._num_of_moves = 0
+        self._state_history = [self._t.get_state()]
+        self._history_scale:tk.Scale
         
         self._buttons = []
         self._make_board(size)
@@ -27,7 +27,8 @@ class GameWindow(tk.Toplevel):
         num_of_buttons = size*size
         for i in range(num_of_buttons):
             b = tk.Button(board,width=3,height=1,font=('Helvetica',30),
-                        command=lambda num=i:self._on_click(num))
+                        activebackground='white',
+                        command=lambda num=i:self._on_click_board(num))
             buttons.append(b)
             b.grid(column=i%size,row=int(i/size))
             pass
@@ -35,7 +36,7 @@ class GameWindow(tk.Toplevel):
         board.pack()
         return
 
-    def _on_click(self,position:int):
+    def _on_click_board(self,position:int):
 
         state_num = int(self._history_scale.get())
         is_rewinded = not (self._num_of_moves == state_num)
@@ -56,21 +57,30 @@ class GameWindow(tk.Toplevel):
 
         return
 
-    def _modify_button(self,button_position:int,mover:0):
+    def _modify_button(self,button_position:int,mover:int,terminated=False,of_line=False):
 
         button = self._buttons[button_position]
         
+        args = {'disabledforeground':'black'}
         if mover == 1 :
-            text = '○'
-            button_state = 'disabled'
+            args['text'] = '○'
+            args['state'] = 'disabled'
         elif mover == -1 :
-            text = '×'
-            button_state = 'disabled'
+            args['text'] = '×'
+            args['state'] = 'disabled'
         else:
-            text = ' '
-            button_state = 'normal'
+            args['text'] = ' '
+            args['state'] = 'normal'
 
-        button.config(text=text,state=button_state)
+        if terminated:
+            args['state'] = 'disabled'
+            if of_line:
+                if mover == 1:
+                    args['disabledforeground'] = 'steelblue'
+                elif mover == -1:
+                    args['disabledforeground'] = 'tomato'
+
+        button.config(**args)
         
         return
 
@@ -83,7 +93,7 @@ class GameWindow(tk.Toplevel):
         history_scale.grid(row=0,columnspan=2)
         self._history_scale = history_scale
 
-        restart_button = tk.Button(frame,text="Restart")
+        restart_button = tk.Button(frame,text="Restart",command=self._on_click_reset)
         exit_button = tk.Button(frame,text="Exit",command=self.destroy)
         restart_button.grid(row=1,column=0)
         exit_button.grid(row=1,column=1)
@@ -93,7 +103,6 @@ class GameWindow(tk.Toplevel):
         return
 
     def _on_scale_move(self,state_num):
-
         state_num = int(state_num)
         self._rewind_to(state_num)
         return
@@ -101,9 +110,25 @@ class GameWindow(tk.Toplevel):
     def _rewind_to(self,state_num:int):
 
         to_state = self._state_history[state_num]
+        result = self._t.get_result(to_state)
+        terminated = result['terminated']
+        lines = result['lines']
+        lines = sum(lines,[]) # flattening
         for p in range(len(to_state)):
             move = int(to_state[p])
-            self._modify_button(p,move)
+            of_line = p in lines
+            self._modify_button(p,move,terminated,of_line)
+        return
+
+    def _on_click_reset(self):
+
+        self._num_of_moves = 0
+        self._state_history = self._state_history[0:1]
+        self._t.set_state(self._state_history[0])
+        self._history_scale.configure(to=0)
+        self._history_scale.set(0)
+        self._rewind_to(0)
+
         return
 
     def put(self,position:int):
