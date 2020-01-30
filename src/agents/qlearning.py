@@ -13,7 +13,7 @@ class TabularQ:
     s = Settings()
 
     @staticmethod
-    def load(id:int):
+    def load(id):
         results = TabularQ._get_results()
         info = results.get(str(id))
         if info is None:
@@ -273,11 +273,11 @@ class TabularQ:
         agent = self._parameters['agent_for']
         state_index = self.get_index(encoded_state)
         if mover == 1:
-            assert (agent is 'maximizer') or (agent is 'both')
+            assert (agent == 'maximizer') or (agent == 'both')
             best_move_order = np.argmax(self._Q[state_index,possible_moves])
             best_move = possible_moves[best_move_order]
         elif mover == -1:
-            assert (agent is 'minimizer') or (agent is 'both')
+            assert (agent == 'minimizer') or (agent == 'both')
             best_move_order = np.argmin(self._Q[state_index,possible_moves])
             best_move = possible_moves[best_move_order]
         else:

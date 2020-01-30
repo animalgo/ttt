@@ -1,14 +1,28 @@
 from src.game.ttt import TTT
 from src.agents.minimax import minimax, minimax_load
 from src.agents.alpha_beta import ABPruning
+import src.agents
 import unittest
 import numpy as np
 
 class CompetingTest(unittest.TestCase):
 
     def test_minimax_vs_minimax(self):
-        t3 = run_withdraw_game(3)
-        self.assertEqual(t3.check_winner()['winner'],0)
+        
+        size = 3
+        t = TTT(size)
+        filepath = 'results/minimax.pk'
+        minimax_loaded = minimax_load(filepath)
+        moves = 0
+        while True:
+            [_,best_move] = minimax_loaded(t.get_state())
+            t.put(best_move)
+            moves += 1
+            if t.is_terminated():
+                break
+            pass
+
+        self.assertEqual(t.check_winner()['winner'],0)
         pass
 
     def test_alphabeta_vs_alphabeta(self):
@@ -156,25 +170,57 @@ class CorrectnessTest(unittest.TestCase):
         self.assertEqual(8,move)
         self.assertEqual(5,score)
 
+class LoadAgentsTest(unittest.TestCase):
 
-def run_withdraw_game(size):
-    t = TTT(size)
-    filepath = 'results/minimax.pk'
-    minimax_loaded = minimax_load(filepath)
-    moves = 0
-    print('Moves : 0 ', end='')
-    while True:
-        [_,best_move] = minimax_loaded(t.get_state())
-        t.put(best_move)
-        moves += 1
-        print(f'{moves} ',end='')
-        if t.is_terminated():
-            break
-        pass
+    def run_game(self,agent1,agent2,size=3):
 
-    print('final state')
-    print(t)
-    return t
+        t = TTT(size)
+        for i in range(size*size):
+            agent = agent1 if i%2 == 0 else agent2
+            inferred = agent(t.get_state())
+            t.put(inferred)
+            if t.is_terminated():
+                break
+        
+        return t.get_result()
+
+    def test_load_random(self):
+
+        agent = src.agents.load('random',size=3)
+        result = self.run_game(agent,agent)
+        self.assertEqual(result['terminated'],True)
+
+    def test_load_minimax(self):
+
+        agent = src.agents.load('minimax')
+        result = self.run_game(agent,agent)
+        self.assertEqual(result['terminated'],True)
+        self.assertEqual(result['winner'],0)
+        self.assertEqual(result['score'],0)
+
+    def test_load_alpha_beta(self):
+
+        agent = src.agents.load('alpha_beta',size=3,penalty_prob=0)
+        result = self.run_game(agent,agent)
+        self.assertEqual(result['terminated'],True)
+        self.assertEqual(result['winner'],0)
+        self.assertEqual(result['score'],0)
+
+    def test_load_alpha_beta_penalty(self):
+        
+        kwargs = {
+            'size':3,
+            'penalty_prob':0.5
+        }
+        agent = src.agents.load('alpha_beta',**kwargs)
+        result = self.run_game(agent,agent)
+        self.assertEqual(result['terminated'],True)
+
+    def test_load_tabular_q(self):
+
+        agent = src.agents.load('tabular_q',id='save_load_test')
+        result = self.run_game(agent,agent)
+        self.assertEqual(result['terminated'],True)
 
 if __name__ == '__main__':
     unittest.main()

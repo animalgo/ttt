@@ -15,12 +15,17 @@ class ABPruning:
 
         pass
 
-    def set_penalty(self,penalty_prob=1):
+    def set_penalty(self,penalty_prob=0):
         
-        self._mode = 'modified'
+        assert type(penalty_prob) == int or type(penalty_prob) == float
         assert penalty_prob >= 0
         assert penalty_prob <= 1
-        self._penalty_prob = penalty_prob
+        
+        if penalty_prob > 0:
+            self._mode = 'modified'
+            self._penalty_prob = penalty_prob
+        else:
+            pass
 
         return
 
