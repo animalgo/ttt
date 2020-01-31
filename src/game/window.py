@@ -1,5 +1,9 @@
 import tkinter as tk
+import tkinter.ttk as ttk
+import time
 from src.game.ttt import TTT
+from typing import Callable
+import numpy as np
 
 class GameWindow(tk.Toplevel):
 
@@ -10,14 +14,31 @@ class GameWindow(tk.Toplevel):
         self._user_first = user_first
 
         self._t = TTT(size)
+        self._agent:Callable[[np.ndarray],int]
 
         self._num_of_moves = 0
         self._state_history = [self._t.get_state()]
         self._history_scale:tk.Scale
         
+        self._player_labels:{1:tk.Label,2:tk.Label}
+        self._progress_bar:ttk.Progressbar
         self._buttons = []
+        self._make_top_frame()
         self._make_board(size)
         self._make_bottom_frame(size)
+        return
+
+    def _make_top_frame(self):
+
+        frame = tk.Frame(self)
+        label1 = tk.Label(frame, text='player1')
+        label2 = tk.Label(frame, text='player2')
+        label1.pack()
+        label2.pack()
+        bar = ttk.Progressbar(frame,maximum=100,mode="indeterminate")
+        self._progress_bar = bar
+        bar.pack()
+        frame.pack()
         return
 
     def _make_board(self,size):
@@ -54,14 +75,20 @@ class GameWindow(tk.Toplevel):
         self._num_of_moves += 1
         self._history_scale.configure(to=self._num_of_moves)
         self._history_scale.set(self._num_of_moves)
+        """
+        [issue] If this procedure is called by button.invoke()
+        then it doesn't invoke the scale's command _on_scale_move.
+        So call it manually (and hence, called twice in user's turn) :
+        """
+        self._on_scale_move(self._num_of_moves)
 
         return
 
-    def _modify_button(self,button_position:int,mover:int,terminated=False,of_line=False):
+    def _modify_button(self,button_position:int,mover:int,move_allowed:bool,terminated=False,of_line=False):
 
         button = self._buttons[button_position]
         
-        args = {'disabledforeground':'black'}
+        args = {'disabledforeground':'black','state':'disabled'}
         if mover == 1 :
             args['text'] = '○'
             args['state'] = 'disabled'
@@ -70,7 +97,10 @@ class GameWindow(tk.Toplevel):
             args['state'] = 'disabled'
         else:
             args['text'] = ' '
-            args['state'] = 'normal'
+            if move_allowed:
+                args['state'] = 'normal'
+            elif not hasattr(self,'_agent'):
+                args['state'] = 'normal'
 
         if terminated:
             args['state'] = 'disabled'
@@ -103,11 +133,30 @@ class GameWindow(tk.Toplevel):
         return
 
     def _on_scale_move(self,state_num):
+        
         state_num = int(state_num)
-        self._rewind_to(state_num)
+        first_mover_turn = True if state_num%2 == 0 else False
+        user_turn = first_mover_turn == self._user_first
+
+        self._set_board(state_num,user_turn)
+        
+        if self.get_result()['terminated']:
+            return
+
+        if state_num == len(self._state_history)-1:
+            if user_turn:
+                pass
+            else:
+                if hasattr(self,'_agent'):
+                    self._on_agent_turn(state_num)
+                pass
+        else:
+            # : agent's turn but it's a previous state
+            pass
+
         return
 
-    def _rewind_to(self,state_num:int):
+    def _set_board(self,state_num:int,user_turn:bool):
 
         to_state = self._state_history[state_num]
         result = self._t.get_result(to_state)
@@ -117,7 +166,7 @@ class GameWindow(tk.Toplevel):
         for p in range(len(to_state)):
             move = int(to_state[p])
             of_line = p in lines
-            self._modify_button(p,move,terminated,of_line)
+            self._modify_button(p,move,user_turn,terminated,of_line)
         return
 
     def _on_click_reset(self):
@@ -127,13 +176,29 @@ class GameWindow(tk.Toplevel):
         self._t.set_state(self._state_history[0])
         self._history_scale.configure(to=0)
         self._history_scale.set(0)
-        self._rewind_to(0)
+        self._set_board(0,self._user_first==True)
 
         return
 
-    def put(self,position:int):
-        
-        self._buttons[position].invoke()
+    def set_agent(self,agent:Callable[[np.ndarray],int],name:str)->None:
+
+        self._agent = agent
+
+
+        return
+
+    def _on_agent_turn(self,state_num:int):
+
+        # TODO : async progress bar
+        self._progress_bar.start(50)
+        state = self._state_history[state_num]
+        move = self._agent(state)
+        button = self._buttons[move]
+        button.configure(state='normal')
+        button.invoke()
+        self._progress_bar.stop()
+
+        return
 
     def get_result(self)->dict:
 
@@ -141,4 +206,16 @@ class GameWindow(tk.Toplevel):
 
 if __name__ == '__main__':
     game_window = GameWindow(True,3)
+    
+    import time
+    def agent(state:np.ndarray):
+        time.sleep(0.3)
+        for i in range(len(state)):
+            if state[i] == 0:
+                return i
+    # import src.agents
+    # agent = src.agents.load('alpha_beta',size=3,penalty_prob=0.3)
+    
+    game_window.set_agent(agent,'agent')
+
     tk.mainloop()
