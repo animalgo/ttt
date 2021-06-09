@@ -2,37 +2,58 @@ import tkinter as tk
 import tkinter.ttk as ttk
 import time
 from src.game.ttt import TTT
-from typing import Callable
+from typing import Callable, Dict
 import numpy as np
 
 class GameWindow(tk.Toplevel):
+    """Game UI"""
 
     def __init__(self,user_first:bool,size=3,*args,**kwargs):
         
         super().__init__(*args,**kwargs)
         
+        # state variables
         self._user_first = user_first
-
         self._t = TTT(size)
         self._agent:Callable[[np.ndarray],int]
-
         self._num_of_moves = 0
         self._state_history = [self._t.get_state()]
-        self._history_scale:tk.Scale
         
-        self._player_labels:{1:tk.Label,2:tk.Label}
+        # UI accessors
+        self._history_scale:tk.Scale
+        self._player_labels:Dict[int, tk.Label] # key : 1,2
         self._progress_bar:ttk.Progressbar
         self._buttons = []
+
+        # UI initialization
         self._make_top_frame()
         self._make_board(size)
         self._make_bottom_frame(size)
         return
 
+    #region Public Methods
+    def set_agent(self,agent:Callable[[np.ndarray],int],name:str)->None:
+
+        self._agent = agent
+        return
+
+    def get_result(self)->dict:
+
+        return self._t.get_result()
+    #endregion
+
+    #region Put UI Components
     def _make_top_frame(self):
 
         frame = tk.Frame(self)
-        label1 = tk.Label(frame, text='player1')
-        label2 = tk.Label(frame, text='player2')
+        if self._user_first:
+            text1 = 'User'
+            text2 = 'AI'
+        else:
+            text1 = 'AI'
+            text2 = 'User'
+        label1 = tk.Label(frame, text=text1)
+        label2 = tk.Label(frame, text=text2)
         label1.pack()
         label2.pack()
         bar = ttk.Progressbar(frame,maximum=100,mode="indeterminate")
@@ -57,6 +78,26 @@ class GameWindow(tk.Toplevel):
         board.pack()
         return
 
+    def _make_bottom_frame(self,size):
+
+        frame = tk.Frame(self)
+
+        history_scale = tk.Scale(frame,command=self._on_scale_move
+                                ,orient='horizontal',from_=0,to=0)
+        history_scale.grid(row=0,columnspan=2)
+        self._history_scale = history_scale
+
+        restart_button = tk.Button(frame,text="Restart",command=self._on_click_reset)
+        exit_button = tk.Button(frame,text="Exit",command=self.destroy)
+        restart_button.grid(row=1,column=0)
+        exit_button.grid(row=1,column=1)
+
+        frame.pack()
+
+        return
+    #endregion
+
+    #region Event Handlers
     def _on_click_board(self,position:int):
 
         state_num = int(self._history_scale.get())
@@ -82,6 +123,70 @@ class GameWindow(tk.Toplevel):
         """
         self._on_scale_move(self._num_of_moves)
 
+        return
+
+    def _on_scale_move(self,state_num):
+        
+        state_num = int(state_num)
+        first_mover_turn = True if state_num%2 == 0 else False
+        user_turn = first_mover_turn == self._user_first
+
+        self._set_board(state_num,user_turn)
+        
+        if self.get_result()['terminated']:
+            return
+
+        if state_num == len(self._state_history)-1:
+            if user_turn:
+                pass
+            else:
+                if hasattr(self,'_agent'):
+                    self._on_agent_turn(state_num)
+                pass
+        else:
+            # : agent's turn but it's a previous state
+            pass
+
+        return
+
+    def _on_click_reset(self):
+
+        self._num_of_moves = 0
+        self._state_history = self._state_history[0:1]
+        self._t.set_state(self._state_history[0])
+        self._history_scale.configure(to=0)
+        self._history_scale.set(0)
+        self._set_board(0,self._user_first==True)
+
+        return
+    #endregion
+
+    #region Private Methods
+    def _on_agent_turn(self,state_num:int):
+
+        # TODO : async progress bar
+        self._progress_bar.start(50)
+        state = self._state_history[state_num]
+        move = self._agent(state)
+        button = self._buttons[move]
+        button.configure(state='normal')
+        button.invoke()
+        self._progress_bar.stop()
+
+        return
+    
+    def _set_board(self,state_num:int,user_turn:bool):
+        """Modify board UI"""
+
+        to_state = self._state_history[state_num]
+        result = self._t.get_result(to_state)
+        terminated = result['terminated']
+        lines = result['lines']
+        lines = sum(lines,[]) # flattening
+        for p in range(len(to_state)):
+            move = int(to_state[p])
+            of_line = p in lines
+            self._modify_button(p,move,user_turn,terminated,of_line)
         return
 
     def _modify_button(self,button_position:int,mover:int,move_allowed:bool,terminated=False,of_line=False):
@@ -113,97 +218,9 @@ class GameWindow(tk.Toplevel):
         button.config(**args)
         
         return
+    #endregion
 
-    def _make_bottom_frame(self,size):
-
-        frame = tk.Frame(self)
-
-        history_scale = tk.Scale(frame,command=self._on_scale_move
-                                ,orient='horizontal',from_=0,to=0)
-        history_scale.grid(row=0,columnspan=2)
-        self._history_scale = history_scale
-
-        restart_button = tk.Button(frame,text="Restart",command=self._on_click_reset)
-        exit_button = tk.Button(frame,text="Exit",command=self.destroy)
-        restart_button.grid(row=1,column=0)
-        exit_button.grid(row=1,column=1)
-
-        frame.pack()
-
-        return
-
-    def _on_scale_move(self,state_num):
-        
-        state_num = int(state_num)
-        first_mover_turn = True if state_num%2 == 0 else False
-        user_turn = first_mover_turn == self._user_first
-
-        self._set_board(state_num,user_turn)
-        
-        if self.get_result()['terminated']:
-            return
-
-        if state_num == len(self._state_history)-1:
-            if user_turn:
-                pass
-            else:
-                if hasattr(self,'_agent'):
-                    self._on_agent_turn(state_num)
-                pass
-        else:
-            # : agent's turn but it's a previous state
-            pass
-
-        return
-
-    def _set_board(self,state_num:int,user_turn:bool):
-
-        to_state = self._state_history[state_num]
-        result = self._t.get_result(to_state)
-        terminated = result['terminated']
-        lines = result['lines']
-        lines = sum(lines,[]) # flattening
-        for p in range(len(to_state)):
-            move = int(to_state[p])
-            of_line = p in lines
-            self._modify_button(p,move,user_turn,terminated,of_line)
-        return
-
-    def _on_click_reset(self):
-
-        self._num_of_moves = 0
-        self._state_history = self._state_history[0:1]
-        self._t.set_state(self._state_history[0])
-        self._history_scale.configure(to=0)
-        self._history_scale.set(0)
-        self._set_board(0,self._user_first==True)
-
-        return
-
-    def set_agent(self,agent:Callable[[np.ndarray],int],name:str)->None:
-
-        self._agent = agent
-
-
-        return
-
-    def _on_agent_turn(self,state_num:int):
-
-        # TODO : async progress bar
-        self._progress_bar.start(50)
-        state = self._state_history[state_num]
-        move = self._agent(state)
-        button = self._buttons[move]
-        button.configure(state='normal')
-        button.invoke()
-        self._progress_bar.stop()
-
-        return
-
-    def get_result(self)->dict:
-
-        return self._t.get_result()
-
+#region Manual Test
 if __name__ == '__main__':
     game_window = GameWindow(True,3)
     
@@ -213,9 +230,11 @@ if __name__ == '__main__':
         for i in range(len(state)):
             if state[i] == 0:
                 return i
-    # import src.agents
-    # agent = src.agents.load('alpha_beta',size=3,penalty_prob=0.3)
+    
+    import src.agents
+    agent = src.agents.load('alpha_beta',size=3,penalty_prob=0)
     
     game_window.set_agent(agent,'agent')
 
     tk.mainloop()
+#endregion
