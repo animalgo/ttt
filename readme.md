@@ -2,11 +2,11 @@
 
 ## Description
 
-![TTT Game Demonstration](.readme\TTT_demonstration.gif)
+![TTT Game Demonstration](https://github.com/animalgo/ttt/blob/master/.readme/TTT_demonstration.gif?raw=true)
 
 
 
-Tic-tac-toe game implementation to demonstrate following AI algorithms
+Tic-tac-toe game implementation to demonstrate the following AI algorithms
 
 
 
@@ -17,7 +17,7 @@ Tic-tac-toe game implementation to demonstrate following AI algorithms
 **α-β pruning**
 
 **Q-learning**
-
+![](https://wikimedia.org/api/rest_v1/media/math/render/svg/678cb558a9d59c33ef4810c9618baf34a9577686)[1] https://en.wikipedia.org/wiki/Q-learning
 
 
 ## Postponed
@@ -28,7 +28,7 @@ Tic-tac-toe game implementation to demonstrate following AI algorithms
 
 UI
 
-- UI for running a game with a selected agent
+- UI for agent selection
 
 
 
