@@ -22,7 +22,6 @@ class GameWindow(tk.Toplevel):
         # UI accessors
         self._history_scale:tk.Scale
         self._player_labels:Dict[int, tk.Label] # key : 1,2
-        self._progress_bar:ttk.Progressbar
         self._buttons = []
 
         # UI initialization
@@ -56,9 +55,6 @@ class GameWindow(tk.Toplevel):
         label2 = tk.Label(frame, text=text2)
         label1.pack()
         label2.pack()
-        bar = ttk.Progressbar(frame,maximum=100,mode="indeterminate")
-        self._progress_bar = bar
-        bar.pack()
         frame.pack()
         return
 
@@ -165,13 +161,11 @@ class GameWindow(tk.Toplevel):
     def _on_agent_turn(self,state_num:int):
 
         # TODO : async progress bar
-        self._progress_bar.start(50)
         state = self._state_history[state_num]
         move = self._agent(state)
         button = self._buttons[move]
         button.configure(state='normal')
         button.invoke()
-        self._progress_bar.stop()
 
         return
     
