@@ -25,6 +25,7 @@ class GameWindow(tk.Toplevel):
         self._buttons = []
 
         # UI initialization
+        self.title(f'TTT')
         self._make_top_frame()
         self._make_board(size)
         self._make_bottom_frame(size)
@@ -46,11 +47,11 @@ class GameWindow(tk.Toplevel):
 
         frame = tk.Frame(self)
         if self._user_first:
-            text1 = 'User'
-            text2 = 'AI'
+            text1 = 'O : User'
+            text2 = 'X : AI'
         else:
-            text1 = 'AI'
-            text2 = 'User'
+            text1 = 'O : AI'
+            text2 = 'X : User'
         label1 = tk.Label(frame, text=text1)
         label2 = tk.Label(frame, text=text2)
         label1.pack()
